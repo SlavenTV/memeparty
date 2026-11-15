@@ -8,10 +8,15 @@ Plattform**. Den tatsächlichen Funktionsumfang und die offenen Meilensteine bes
 
 ## Einfachster lokaler Start unter Windows
 
-Docker Desktop mit Linux-Containern starten, ZIP entpacken und
-`Start-MemeParty.cmd` doppelklicken. Einrichtung, Datenbankmigration und Start
-laufen automatisch; der Browser oeffnet die lokale Adresse.
-`Test-MemeParty.cmd` prueft HTTP, WebSockets, Redis und PostgreSQL.
+**`MemeParty.vbs` doppelklicken** — mehr ist nicht noetig. Statt einer Konsole
+erscheint ein kleines Fortschrittsfenster: Docker Desktop wird bei Bedarf selbst
+gestartet, das Datenbankpasswort automatisch erzeugt, alles gebaut und gestartet,
+danach oeffnet sich der Browser auf der lokalen Adresse. Laeuft MemeParty bereits,
+oeffnet derselbe Doppelklick nur den Browser.
+
+`MemeParty-Stoppen.vbs` beendet die Container (Daten bleiben erhalten),
+`MemeParty-Diagnose.cmd` bietet ein Klartextmenue mit Status, Logs, Selbsttest
+(HTTP, WebSockets, Redis, PostgreSQL) und komplettem Neubau.
 Eine separate Node.js-Installation ist nicht erforderlich. Details: `LOKAL_STARTEN.md`.
 
 ## Spielen

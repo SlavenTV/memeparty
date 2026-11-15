@@ -32,7 +32,7 @@ normaler PostgreSQL 16 verwendet; PGlite ist keine Produktabhaengigkeit.
 Docker Desktop und Windows waren hier nicht verfuegbar. Die PowerShell-Pruefung
 lief unter PowerShell 7.4.6 auf Linux; Docker- und Browseraufrufe wurden im
 Launcher-Test ersetzt. Container-Build/Start unter Windows muessen deshalb auf
-deinem Rechner ausgefuehrt werden. **Test-MemeParty.cmd** prueft dort die echten
+deinem Rechner ausgefuehrt werden. **MemeParty-Diagnose.cmd** > *Selbsttest* prueft dort die echten
 HTTP-/WebSocket-/Redis-/PostgreSQL-Container.
 
 Die zwei Playwright-Browsertests aus 0.1 wurden an die neue Textstruktur angepasst.

@@ -8,11 +8,12 @@ PostgreSQL, Redis, nginx oder npm ist fuer diesen Startweg nicht erforderlich.
 
 ## Update auf 0.3.1
 
-1. Im bisherigen Projekt `Stop-MemeParty.cmd` ausfuehren.
+1. Im bisherigen Projekt `MemeParty-Stoppen.vbs` ausfuehren.
 2. Das neue ZIP entpacken und die Inhalte des enthaltenen `memeparty`-Ordners
    in den bisherigen Projektordner kopieren; bestehende Projektdateien ersetzen.
 3. Die automatisch erzeugte `.env.local` behalten. Sie ist nicht im ZIP enthalten.
-4. `Start-MemeParty.cmd` erneut starten. Die geaenderten Images werden gebaut.
+4. `MemeParty.vbs` erneut starten. Die geaenderten Images werden gebaut.
+   Nach groesseren Aenderungen im Diagnosemenue **Alles neu bauen** waehlen.
 5. Im Browser Strg+F5 druecken. Fuer die neuen Regeln eine neue Lobby erstellen
    oder im Lobby-Bildschirm die Regeln anpassen und speichern.
 
@@ -22,8 +23,8 @@ Datenbank und Redis-Volumes bleiben erhalten. Ein Datenbank-Reset ist nicht noet
 
 Version 0.3 blockierte Imgflip-Bilder ueber die nginx-Content-Security-Policy.
 In 0.3.1 ist ausschliesslich die Bildquelle https://i.imgflip.com zusaetzlich erlaubt.
-Mit den aktualisierten Projektdateien Stop-MemeParty.cmd und anschliessend
-Start-MemeParty.cmd ausfuehren; danach im Browser Strg+F5 druecken.
+Mit den aktualisierten Projektdateien `MemeParty-Stoppen.vbs` und anschliessend
+`MemeParty.vbs` ausfuehren; danach im Browser Strg+F5 druecken.
 Die Bilder werden weiterhin aus dem Internet geladen.
 
 ## Editor, Kategorien und Vorlagenwechsel
@@ -40,15 +41,17 @@ Die Bilder werden weiterhin aus dem Internet geladen.
   geladen und benoetigen eine Internetverbindung. Fuer Offline-Bilder nur
   „Eigene Illustrationen“ waehlen.
 
-## Starten
+## Starten (ein Doppelklick)
 
 1. ZIP vollstaendig entpacken, beispielsweise nach `C:\Projekte\MemeParty`.
-2. Im entpackten `memeparty`-Ordner **Start-MemeParty.cmd** doppelklicken.
-3. Beim ersten Start werden die Container heruntergeladen und gebaut. Das kann
-   einige Minuten dauern. Die Datenbank wird automatisch angelegt/migriert.
+2. Im entpackten `memeparty`-Ordner **MemeParty.vbs** doppelklicken.
+3. Es erscheint ein kleines Fortschrittsfenster mit dem aktuellen Schritt; eine
+   Konsolenfenster gibt es nicht. Beim ersten Start werden Images gebaut, das kann
+   einige Minuten dauern. Danach dauert ein Start rund 20 bis 30 Sekunden.
 4. Der Browser oeffnet sich automatisch, normalerweise unter
    **http://localhost:8080**. Falls dieser Port belegt ist, waehlt die erste
-   Einrichtung einen freien Port bis 8090. Die Adresse steht im Startfenster.
+   Einrichtung einen freien Port bis 8090. Die Adresse steht im Fenster.
+5. Laeuft MemeParty bereits, oeffnet derselbe Doppelklick nur noch den Browser.
 
 Die Datei `.env.local` und ein zufaelliges Datenbankpasswort werden automatisch
 angelegt. Die Entwicklerdatei `.env` und eine Plesk-Domain brauchst du hier nicht.
@@ -84,11 +87,17 @@ geändert werden. Für eine Produktionsumgebung muss `ADMIN_EMAILS` explizit ges
 
 | Datei | Funktion |
 |---|---|
-| Start-MemeParty.cmd | Einrichten, bauen, starten und Browser oeffnen |
-| Stop-MemeParty.cmd | Stoppen; Daten und Lobbys bleiben in Docker-Volumes |
-| Status-MemeParty.cmd | Containerstatus und Adresse anzeigen |
-| Logs-MemeParty.cmd | Letzte Meldungen zur Fehlersuche anzeigen |
-| Test-MemeParty.cmd | Echten HTTP-/WebSocket-/Redis-/PostgreSQL-Test ausfuehren |
+| MemeParty.vbs | Einrichten, bauen, starten, Browser oeffnen (oder nur Browser, wenn schon aktiv) |
+| MemeParty-Stoppen.vbs | Stoppen; Daten und Lobbys bleiben in Docker-Volumes |
+| MemeParty-Diagnose.cmd | Klartextmenue: Status, Logs, Selbsttest, kompletter Neubau |
+
+Das Diagnosefenster bietet dieselben Aktionen wie die Startdateien, zeigt aber alle
+Meldungen im Klartext. Dort gibt es zusaetzlich den Selbsttest und den kompletten
+Neubau ohne Docker-Cache.
+
+Jeder Start schreibt ein Protokoll nach `logs\memeparty-<Datum>.log`; die letzten
+10 Dateien bleiben erhalten. Bei Fehlern bietet das Fortschrittsfenster direkt
+die Schaltflaeche **Log oeffnen**.
 
 Der Test erzeugt zwei temporaere Testspieler und prueft einen kompletten Spielablauf,
 Datenbankpersistenz sowie Reconnect. Er laesst deine eigenen Lobbys unberuehrt und
@@ -96,18 +105,22 @@ loescht ausschliesslich seine eigenen Testdaten.
 
 ## Typische Probleme
 
-- **Docker Desktop fehlt/ist nicht gestartet:** installieren/starten und erneut doppelklicken.
+- **Docker Desktop fehlt:** von https://www.docker.com/products/docker-desktop/ installieren.
+- **Docker Desktop startet nicht von selbst:** einmal manuell starten, warten, bis die
+  Engine laeuft, dann `MemeParty.vbs` erneut doppelklicken.
 - **Windows-Container aktiv:** im Docker-Desktop-Menue auf Linux-Container wechseln.
 - **Docker kann Images nicht laden:** Internet-/Proxyzugang von Docker Desktop pruefen.
-- **Port inzwischen belegt:** MemeParty stoppen und `LOCAL_PORT` in `.env.local`
+- **Port inzwischen belegt:** `MemeParty-Stoppen.vbs`, dann `LOCAL_PORT` in `.env.local`
   auf einen freien Port aendern. Danach neu starten.
 - **Kein Beitritt/keine Cookie-Session:** die Adresse genau mit `localhost` oeffnen.
 - **PostgreSQL meldet falsches Passwort:** das erzeugte `LOCAL_DB_PASSWORD` nicht
   nachtraeglich aendern; die bestehende Datenbank verwendet das erste Passwort.
-- **Der Browser oeffnet nicht automatisch:** die im Startfenster angezeigte Adresse
+- **Der Browser oeffnet nicht automatisch:** die im Fenster angezeigte Adresse
   manuell oeffnen.
+- **Unklarer Fehler:** `MemeParty-Diagnose.cmd` > *Logs anzeigen* oder die Datei
+  `logs\memeparty-*.log` oeffnen.
 
-`Stop-MemeParty.cmd` loescht keine Daten. Fuer einen vollstaendigen lokalen Reset
+`MemeParty-Stoppen.vbs` loescht keine Daten. Fuer einen vollstaendigen lokalen Reset
 MemeParty stoppen und die Volumes `memeparty-local_local_postgres` sowie
 `memeparty-local_local_redis` in Docker Desktop loeschen. Dabei gehen die lokalen
 Spiel- und Datenbankdaten verloren; dies geschieht nicht automatisch.
