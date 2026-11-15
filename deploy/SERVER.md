@@ -53,6 +53,9 @@ In `.env` muessen stehen:
 ./deploy/deploy.sh
 ```
 
+Falls die Dateien per ZIP statt `git clone` kamen und kein Ausfuehrungsrecht haben:
+`chmod +x deploy/*.sh`.
+
 Das Skript prueft die Pflichtwerte, baut die Images, startet alle Dienste, wartet
 auf die Healthchecks und ruft `https://<DOMAIN>/ready` ab. Erst wenn das antwortet,
 ist MemeParty online. Der erste Start dauert wegen des Zertifikats und des Builds
