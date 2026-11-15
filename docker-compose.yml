@@ -1,23 +1,63 @@
+name: memeparty
+
+# Produktions-Stack fuer einen eigenen Server (VPS / Root-Server).
+# TLS und Zertifikate uebernimmt Caddy automatisch (Let's Encrypt).
+# Lokaler Test dagegen: docker-compose.local.yml + MemeParty.vbs
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${HTTP_BIND:-0.0.0.0}:${HTTP_PORT:-80}:80"
+      - "${HTTPS_BIND:-0.0.0.0}:${HTTPS_PORT:-443}:443"
+      - "${HTTPS_BIND:-0.0.0.0}:${HTTPS_PORT:-443}:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env (z. B. memeparty.example.com)}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env for Let's Encrypt}
+    volumes:
+      - ${CADDYFILE:-./deploy/Caddyfile}:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      frontend:
+        condition: service_healthy
+    logging: *default-logging
+
   frontend:
+    image: ghcr.io/${GHCR_OWNER:-slaventv}/memeparty-web:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    ports:
-      - "127.0.0.1:${FRONTEND_PORT:-8080}:80"
+    restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/ready"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 12
+    logging: *default-logging
   backend:
+    image: ghcr.io/${GHCR_OWNER:-slaventv}/memeparty-server:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: apps/server/Dockerfile
+    restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3001
-      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN}
-      TRUST_PROXY: "false"
+      BIND_HOST: 0.0.0.0
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN to https://<DOMAIN>}
+      TRUST_PROXY: "true"
       DATABASE_URL: postgresql://memeparty:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/memeparty
       REDIS_URL: redis://redis:6379
       UPLOAD_DIR: /app/data/uploads
@@ -28,15 +68,17 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 10s
       timeout: 5s
+      start_period: 30s
       retries: 12
-    restart: unless-stopped
     volumes:
       - uploads_data:/app/data/uploads
+    logging: *default-logging
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: memeparty
       POSTGRES_USER: memeparty
@@ -47,9 +89,10 @@ services:
       test: ["CMD-SHELL", "pg_isready -U memeparty -d memeparty"]
       interval: 5s
       retries: 20
-    restart: unless-stopped
+    logging: *default-logging
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--maxmemory-policy", "noeviction"]
     volumes:
       - redis_data:/data
@@ -57,8 +100,11 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       retries: 20
-    restart: unless-stopped
+    logging: *default-logging
+
 volumes:
   postgres_data:
   redis_data:
   uploads_data:
+  caddy_data:
+  caddy_config:

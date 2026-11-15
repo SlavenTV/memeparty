@@ -1,0 +1,31 @@
+# Caddy fuer den Produktionsbetrieb: automatisches TLS (Let's Encrypt/ZeroSSL).
+# Domain, Mailadresse und Ports kommen aus .env (siehe .env.production.example).
+
+{
+	email {$ACME_EMAIL}
+	admin off
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Leitet HTTP und WebSockets an das Frontend-nginx, das intern an das Backend weiterreicht.
+	reverse_proxy frontend:80 {
+		health_uri /ready
+		health_interval 30s
+		health_timeout 5s
+	}
+
+	header {
+		Server ""
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

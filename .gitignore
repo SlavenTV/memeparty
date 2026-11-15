@@ -6,3 +6,4 @@ playwright-report/
 *.zip
 .env.local
 logs/
+backups/

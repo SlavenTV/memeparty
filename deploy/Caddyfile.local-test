@@ -1,0 +1,30 @@
+# Nur fuer den lokalen Test des Produktions-Stacks (kein Let's Encrypt).
+# Verwendung: DOMAIN=localhost CADDYFILE=./deploy/Caddyfile.local-test
+#             HTTPS_PORT=8443 PUBLIC_ORIGIN=https://localhost:8443 docker compose up -d --build
+
+{
+	admin off
+	auto_https disable_redirects
+}
+
+localhost {
+	tls internal
+	encode zstd gzip
+
+	reverse_proxy frontend:80 {
+		health_uri /ready
+		health_interval 30s
+	}
+
+	header {
+		Server ""
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

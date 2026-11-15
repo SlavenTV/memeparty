@@ -1,12 +1,23 @@
 # Plesk Reverse Proxy
 
-1. Eine Subdomain anlegen und ein gültiges TLS-Zertifikat aktivieren.
-2. Das Projekt auf dem Docker-Host entpacken, `.env` konfigurieren und
-   `docker compose up -d --build` ausführen.
-3. Die Subdomain an den lokalen Frontend-Port weiterleiten. In den zusätzlichen
-   nginx-Direktiven für die Domain die bestehende `location /` konfigurieren oder
-   über Plesk Docker-Proxyregeln ersetzen. Keine zweite identische `location /`
-   hinzufügen, falls Plesk diese bereits erzeugt.
+1. Eine Subdomain anlegen und ein gueltiges TLS-Zertifikat aktivieren.
+2. Projekt auf den Docker-Host kopieren, `.env` aus `.env.production.example`
+   anlegen und fuer Plesk ergaenzen:
+
+   ```
+   CADDYFILE=./deploy/Caddyfile.plesk
+   HTTP_BIND=127.0.0.1
+   HTTP_PORT=8080
+   HTTPS_BIND=127.0.0.1
+   HTTPS_PORT=8443
+   ```
+
+   Danach `docker compose up -d --build` ausfuehren. Caddy laeuft dann ohne eigenes
+   TLS und hoert nur lokal auf 8080.
+3. Die Subdomain an `http://127.0.0.1:8080` weiterleiten. In den zusaetzlichen
+   nginx-Direktiven der Domain die bestehende `location /` konfigurieren oder die
+   Plesk-Docker-Proxyregeln verwenden. Keine zweite identische `location /`
+   hinzufuegen, falls Plesk diese bereits erzeugt.
 
 Beispiel für den Reverse-Proxy-Block:
 

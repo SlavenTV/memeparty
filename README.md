@@ -74,24 +74,29 @@ Offene Meldungen werden direkt an der jeweiligen Vorlage angezeigt und mit einer
 Moderationsentscheidung erledigt. Für andere Umgebungen werden berechtigte Adressen
 kommasepariert über `ADMIN_EMAILS` konfiguriert.
 
-## Produktion
+## Produktion (eigener Server)
 
-Setze in `.env`:
-
-- `PUBLIC_ORIGIN=https://deine-domain.de` ohne abschließenden Slash.
-- `ADMIN_EMAILS=deine-admin-adresse@example.com` (mehrere Adressen kommasepariert).
-- `POSTGRES_PASSWORD` auf ein langes zufälliges Passwort aus URL-sicheren Zeichen.
-- `FRONTEND_PORT=8080` oder einen freien lokalen Port.
+Der Produktions-Stack steht in `docker-compose.yml` und ist für einen VPS/Root-Server
+gedacht: Caddy terminiert TLS inklusive automatischer Let's-Encrypt-Zertifikate,
+dahinter liegen Frontend-nginx, Backend, PostgreSQL und Redis. Nur 80/443 sind
+veröffentlicht, Datenbank und Redis bleiben im internen Docker-Netz.
 
 ```bash
-docker compose up -d --build
-docker compose logs -f backend
+cp .env.production.example .env     # DOMAIN, ACME_EMAIL, PUBLIC_ORIGIN, POSTGRES_PASSWORD, ADMIN_EMAILS
+./deploy/deploy.sh                 # baut, startet, wartet auf Healthchecks, prüft /ready
+./deploy/backup.sh                 # DB-Dump + Redis-Snapshot + Uploads nach backups/
 ```
 
-Backend führt die versionierte Prisma-Migration vor dem Start aus. Frontend bindet nur
-an 127.0.0.1. Redis/Postgres haben keine veröffentlichten Ports. TLS muss der vorgeschaltete
-Proxy bereitstellen; Production-Cookies sind Secure und funktionieren deshalb nur über HTTPS.
-Details: `deploy/PLESK.md`.
+`PUBLIC_ORIGIN` muss exakt `https://<DOMAIN>` sein (ohne Slash), sonst schlagen
+Origin-Prüfung und WebSockets fehl. Log-Rotation, Healthchecks und `restart:
+unless-stopped` sind im Compose konfiguriert.
+
+Komplette Anleitung inklusive DNS, Firewall, Backups, Updates, Rollback und
+Fehlersuche: **`deploy/SERVER.md`**. Für Plesk-Hosting mit vorgeschaltetem Proxy
+statt Caddy: `deploy/PLESK.md`.
+
+Backend führt die versionierte Prisma-Migration vor dem Start aus. Production-Cookies
+sind Secure und funktionieren deshalb nur über HTTPS.
 
 Für mehrere Backend-Instanzen ist bereits der Socket.IO Redis Adapter eingebaut.
 Die WebSocket-Verbindung muss an ihrer gewählten Instanz bleiben. Alle Zustandsänderungen
