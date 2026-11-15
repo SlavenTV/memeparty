@@ -1,0 +1,9 @@
+{
+  "name": "@memeparty/server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch --import tsx src/index.ts",
+    "start": "node --import tsx src/index.ts"
+  }
+}

@@ -1,0 +1,1336 @@
+Du bist Lead Software Architect, Senior Full-Stack-Entwickler, Multiplayer-Backend-Entwickler und UI/UX-Designer.
+
+Entwickle ein vollständiges webbasiertes Multiplayer-Partyspiel, das vom Spielprinzip moderner Meme-Partyspiele inspiriert ist.
+
+Es darf jedoch weder Markenname, Quellcode, Grafiken, Meme-Sammlungen, Texte noch das konkrete UI eines existierenden Spiels kopieren.
+
+Das Produkt soll eine eigenständige Plattform mit eigener Identität, eigenem Design und deutlich flexiblerer technischer Architektur werden.
+
+# PRODUKTZIEL
+
+Baue ein Browsergame, bei dem mehrere Spieler gemeinsam einer Lobby beitreten und in mehreren Runden kreative Inhalte erstellen und anschließend gegenseitig bewerten.
+
+Der erste Hauptspielmodus ist ein Meme-Spiel.
+
+Ein Spieler erhält eine Meme-Vorlage und erstellt innerhalb eines Zeitlimits eine Caption.
+
+Nach Ablauf der Erstellungsphase werden alle eingereichten Memes nacheinander oder gleichzeitig präsentiert.
+
+Die Spieler bewerten die Einsendungen.
+
+Danach werden Punkte berechnet.
+
+Nach mehreren Runden gewinnt der Spieler mit der höchsten Gesamtpunktzahl.
+
+Das System darf jedoch NICHT speziell nur für Memes entwickelt werden.
+
+Die zugrunde liegende Game Engine muss so abstrahiert werden, dass später ohne grundlegende Änderungen weitere Partyspiel-Modi implementiert werden können.
+
+Beispiele:
+
+Meme Battle
+
+Same Meme
+
+Themen-Meme
+
+GIF Battle
+
+Bildunterschriften
+
+Zeichenspiel
+
+Antwortspiel
+
+Voting-Spiel
+
+Team Battle
+
+Turniere
+
+Community Game Modes
+
+# TECHNOLOGIE
+
+Frontend:
+
+React
+
+TypeScript
+
+Vite
+
+Tailwind CSS
+
+Zustand oder vergleichbare kleine State-Library
+
+Socket.IO Client
+
+React Router
+
+PWA-Unterstützung
+
+Backend:
+
+Node.js
+
+TypeScript
+
+Fastify
+
+Socket.IO
+
+Prisma ORM
+
+PostgreSQL
+
+Redis
+
+Sharp für Bildverarbeitung
+
+Zod für sämtliche API- und WebSocket-Payload-Validierung
+
+Authentifizierung über sichere HttpOnly-Cookies bzw. Session Tokens.
+
+Deployment:
+
+Docker Compose
+
+Separate Container für:
+
+frontend
+
+backend
+
+PostgreSQL
+
+Redis
+
+optional MinIO
+
+Die Anwendung muss hinter nginx, Traefik oder einem Plesk Reverse Proxy funktionieren.
+
+Konfiguration ausschließlich über Environment Variables.
+
+# ARCHITEKTUR
+
+Entwickle eine modulare Monorepo-Struktur.
+
+Beispiel:
+
+apps/web
+
+apps/server
+
+packages/shared
+
+packages/game-engine
+
+packages/game-modes
+
+packages/ui
+
+packages/config
+
+packages/types
+
+Gemeinsame Types zwischen Server und Client dürfen nicht doppelt definiert werden.
+
+WebSocket Events und REST-Schemas müssen zentral typisiert sein.
+
+# GAME ENGINE
+
+Die zentrale Game Engine darf nichts über Memes wissen.
+
+Implementiere eine allgemeine serverseitige State Machine.
+
+Ein Spiel besitzt mindestens folgende Phasen:
+
+LOBBY
+
+PREPARING
+
+ROUND_INTRO
+
+INPUT
+
+INPUT_LOCKED
+
+PRESENTATION
+
+VOTING
+
+ROUND_RESULTS
+
+NEXT_ROUND
+
+GAME_RESULTS
+
+FINISHED
+
+Jede Phase besitzt:
+
+start()
+
+update()
+
+validateAction()
+
+finish()
+
+onPlayerJoin()
+
+onPlayerLeave()
+
+onReconnect()
+
+Der Server ist immer authoritative.
+
+Der Client darf niemals selbst entscheiden, dass eine Phase beendet wurde.
+
+Timer werden ausschließlich vom Server kontrolliert.
+
+Der Client erhält:
+
+server timestamp
+
+phase start timestamp
+
+phase end timestamp
+
+und berechnet daraus nur die visuelle Timeranzeige.
+
+# GAME MODE API
+
+Erstelle eine GameMode-Schnittstelle.
+
+Ein GameMode soll definieren können:
+
+Name
+
+Beschreibung
+
+minimale Spieleranzahl
+
+maximale Spieleranzahl
+
+Anzahl der Runden
+
+benötigte Assets
+
+Input-Schema
+
+Voting-System
+
+Scoring-System
+
+Phasen
+
+Round Setup
+
+Round Cleanup
+
+Game Setup
+
+Game Cleanup
+
+Host-Konfigurationsoptionen
+
+Dadurch sollen später neue Modi implementiert werden können, ohne Lobby-, Netzwerk-, Benutzer- oder Datenbankcode ändern zu müssen.
+
+# ERSTE SPIELMODI
+
+Implementiere mindestens folgende Modi.
+
+NORMAL MEME
+
+Jeder Spieler bekommt zufällig eine andere Meme-Vorlage.
+
+SAME MEME
+
+Alle Spieler bekommen dieselbe Vorlage.
+
+TOPIC MEME
+
+Zusätzlich zur Vorlage wird ein zufälliges Thema vorgegeben.
+
+RELAXED
+
+Keine Gesamtpunktzahl und kein Sieger.
+
+MEME DUEL
+
+Jeweils zwei Spieler treten direkt gegeneinander an.
+
+Der Gewinner eines Duells kommt weiter.
+
+CHAOS MODE
+
+Jede Runde kann andere Regeln verwenden.
+
+Beispielsweise:
+
+gleiche Vorlage
+
+nur 30 Sekunden
+
+anonyme Einsendungen
+
+doppelte Punkte
+
+keine Downvotes
+
+zufällige Texteinschränkung
+
+# LOBBY
+
+Spieler sollen ohne Account teilnehmen können.
+
+Gastspieler benötigen nur:
+
+Nickname
+
+temporäre Player-ID
+
+Session Token
+
+Optional soll später ein Account registriert werden können.
+
+Private Lobby erstellen.
+
+Öffentliche Lobby erstellen.
+
+Lobby über Code beitreten.
+
+Lobby über URL beitreten.
+
+Beispiel:
+
+/join/X7K4P2
+
+Lobby-Code kurz und leicht eintippbar gestalten.
+
+Lobby enthält:
+
+Lobbyname
+
+Host
+
+Lobby-Code
+
+Spielerliste
+
+Spielmodus
+
+Meme-Pack
+
+Rundenanzahl
+
+Input-Zeit
+
+Voting-Zeit
+
+maximale Spieler
+
+öffentlich/privat
+
+Join während laufender Runde erlaubt
+
+Family-Friendly Filter
+
+Zuschauer erlaubt
+
+Host kontrolliert Weiter
+
+Spieler können Ready setzen.
+
+Host kann Spiel starten.
+
+Nur der Server entscheidet, ob genügend Spieler vorhanden sind.
+
+# HOST MIGRATION
+
+Wenn der Host die Verbindung verliert, darf die Lobby nicht sterben.
+
+Nach einem konfigurierbaren Timeout wird automatisch ein anderer Spieler Host.
+
+Wenn der alte Host zurückkehrt, bleibt die neue Host-Zuweisung bestehen.
+
+# RECONNECT
+
+Reconnect ist ein Kernfeature.
+
+Jeder Client besitzt ein Reconnect Token.
+
+Bei:
+
+F5
+
+Browser-Neuladen
+
+WLAN-Unterbrechung
+
+Mobile App Hintergrund
+
+kurzem Verbindungsverlust
+
+muss der Spieler automatisch wiederhergestellt werden.
+
+Wiederherzustellen sind:
+
+Lobby
+
+Spieler
+
+Score
+
+aktuelle Runde
+
+aktueller Input
+
+Vote-Status
+
+Meme Buddy
+
+aktueller Spielzustand.
+
+# MEME EDITOR
+
+Erstelle einen responsiven Meme Editor.
+
+Er muss Desktop, Tablet und Smartphone unterstützen.
+
+Meme-Vorlage anzeigen.
+
+Text direkt auf dem Bild rendern.
+
+Mehrere Textfelder unterstützen.
+
+Textfeld-Eigenschaften:
+
+Position X/Y
+
+Breite
+
+Fontgröße
+
+Font
+
+Textausrichtung
+
+Textfarbe
+
+Outline
+
+Outline-Stärke
+
+Rotation
+
+Großbuchstaben
+
+Shadow
+
+Die verfügbaren Optionen können vom GameMode eingeschränkt werden.
+
+Unterstütze später:
+
+Sticker
+
+Emoji
+
+freie Textfelder
+
+Drag & Drop
+
+Resize Handles.
+
+Beim Absenden wird nicht zwingend sofort ein fertiges JPEG erzeugt.
+
+Speichere möglichst:
+
+templateId
+
+text layers
+
+styles
+
+positions
+
+userId
+
+roundId.
+
+Der Server rendert das endgültige Ergebnis nur dann, wenn es benötigt wird.
+
+Dadurch soll Speicherplatz gespart werden.
+
+# TEMPLATE SYSTEM
+
+Implementiere eine zentrale Template Library.
+
+Template Eigenschaften:
+
+id
+
+ownerId
+
+name
+
+description
+
+mediaType
+
+storagePath
+
+thumbnailPath
+
+width
+
+height
+
+tags
+
+language
+
+rating
+
+nsfw flag
+
+active
+
+createdAt
+
+updatedAt.
+
+Unterstützte Medien zunächst:
+
+JPEG
+
+PNG
+
+WebP
+
+GIF
+
+Später:
+
+MP4
+
+WebM.
+
+Templates können zu Packs zusammengefasst werden.
+
+# MEME PACKS
+
+Ein Meme Pack enthält beliebig viele Templates.
+
+Pack Eigenschaften:
+
+Name
+
+Beschreibung
+
+Cover
+
+Besitzer
+
+öffentlich/privat
+
+Tags
+
+Sprache
+
+Altersfreigabe.
+
+Spieler können eigene Packs erstellen.
+
+Andere Spieler können Packs optional abonnieren oder favorisieren.
+
+Lobby-Hosts können mehrere Packs gleichzeitig aktivieren.
+
+# ASSET PIPELINE
+
+Uploads niemals direkt öffentlich bereitstellen.
+
+Validiere:
+
+MIME-Type
+
+Dateigröße
+
+Bilddimensionen
+
+Dateisignatur.
+
+Dateinamen immer serverseitig erzeugen.
+
+Erzeuge automatisch:
+
+Original
+
+optimierte Variante
+
+Thumbnail.
+
+Nutze Sharp.
+
+Optionalen S3-kompatiblen Storage unterstützen.
+
+Lokale Entwicklung darf normalen lokalen Storage verwenden.
+
+# VOTING
+
+Implementiere mehrere Voting Strategien.
+
+LIKE / NEUTRAL / DISLIKE
+
+Nur Like
+
+1–5 Sterne
+
+Ranking
+
+Best-of-N
+
+Duel Voting.
+
+Der GameMode bestimmt die verwendete VotingStrategy.
+
+Der Server verhindert:
+
+Mehrfachvotes
+
+Vote auf sich selbst, wenn der Modus es verbietet
+
+Votes nach Ablauf des Timers
+
+Manipulation über direkte WebSocket Events.
+
+# MEME BUDDY
+
+Implementiere eine optionale Side-Bet-Mechanik.
+
+Spieler können vor Ende des Votings ein Meme auswählen, von dem sie glauben, dass es besonders gut abschneiden wird.
+
+Der GameMode definiert:
+
+ob die Funktion verfügbar ist
+
+Bonusfaktor
+
+Risiko bei negativem Score
+
+maximale Anzahl pro Runde.
+
+# SCORING
+
+Scoring darf nicht hart codiert sein.
+
+Erstelle eine ScoringStrategy.
+
+Beispiele:
+
+PositiveVoteScore
+
+LikeDislikeScore
+
+RankingScore
+
+DuelScore
+
+TeamScore.
+
+Alle Score-Berechnungen erfolgen ausschließlich serverseitig.
+
+# ANONYME MEMES
+
+Optional können Einsendungen bis zum Ende des Votings anonym bleiben.
+
+Erst danach wird angezeigt, von wem ein Meme stammt.
+
+Dies muss pro Lobby konfigurierbar sein.
+
+# SPIELERGEBNIS
+
+Nach jeder Runde anzeigen:
+
+Meme
+
+Ersteller
+
+Votes
+
+Punkte
+
+Bonus
+
+Gesamtscore.
+
+Nach Spielende:
+
+Podium
+
+Gesamtrangliste
+
+bestes Meme
+
+schlechtestes Meme optional
+
+meiste Likes
+
+Meme Buddy Trefferquote
+
+weitere Fun Stats.
+
+# LOBBY PRESETS
+
+Hosts können Lobby-Konfigurationen speichern.
+
+Beispiele:
+
+Fast Game
+
+Party
+
+Family
+
+Streamer
+
+Chaos
+
+Custom.
+
+Presets müssen sämtliche relevanten Lobby-Einstellungen speichern können.
+
+# ZUSCHAUER
+
+Unterstütze Zuschauer.
+
+Zuschauer:
+
+nehmen nicht aktiv teil
+
+dürfen optional voten
+
+werden nicht in Spieleranzahl eingerechnet.
+
+Host kann Zuschauer-Votes separat aktivieren.
+
+# PUBLIC MATCHMAKING
+
+Spieler können Quick Play auswählen.
+
+Der Matchmaker sucht eine passende öffentliche Lobby.
+
+Berücksichtige:
+
+Sprache
+
+Spielmodus
+
+freie Plätze
+
+Family-Friendly-Modus
+
+Region optional.
+
+Wenn keine passende Lobby existiert, darf automatisch eine neue öffentliche Lobby erzeugt werden.
+
+# CHAT
+
+Lobby Chat implementieren.
+
+Chat mit Rate Limiting.
+
+Optional Family-Friendly Filter.
+
+Host kann Chat deaktivieren.
+
+Spieler können andere Spieler lokal muten.
+
+# MODERATION
+
+Implementiere:
+
+Kick
+
+Ban aus Lobby
+
+Report
+
+Vote Kick in öffentlichen Räumen
+
+Mute
+
+Chat Rate Limit
+
+Nickname Filter
+
+Caption Filter.
+
+Reports in Datenbank speichern.
+
+Host-Rechte niemals nur clientseitig überprüfen.
+
+# ACCOUNTS
+
+Das Spiel muss komplett ohne Account spielbar sein.
+
+Optionale Accounts bieten:
+
+Profil
+
+Avatar
+
+Freundesliste
+
+Statistiken
+
+Achievements
+
+Meme Collection
+
+eigene Templates
+
+eigene Packs
+
+Lobby Presets
+
+Favoriten.
+
+Nutze sichere Passwort-Hashes mit Argon2.
+
+Email-Verifizierung so abstrahieren, dass später ein Mailprovider angeschlossen werden kann.
+
+# FREUNDE
+
+Account-Spieler können:
+
+Freundschaftsanfrage senden
+
+annehmen
+
+ablehnen
+
+entfernen.
+
+Online Status optional.
+
+Freunde direkt in Lobby einladen.
+
+# STATISTIKEN
+
+Speichere langfristig:
+
+Spiele
+
+Siege
+
+Runden
+
+erstellte Memes
+
+erhaltene Likes
+
+erhaltene Dislikes
+
+Gesamtpunkte
+
+durchschnittliche Punkte
+
+höchste Runde
+
+Meme Buddy Trefferquote
+
+Lieblingsmodus.
+
+Keine Statistiken dürfen den Live-Game-Loop blockieren.
+
+Statistik-Updates nach Möglichkeit asynchron durchführen.
+
+# ACHIEVEMENTS
+
+Implementiere ein Event-basiertes Achievement-System.
+
+Beispiele:
+
+erstes Spiel
+
+erstes gewonnenes Spiel
+
+100 Memes
+
+10 Siege
+
+perfekte Runde
+
+Meme Buddy Meister
+
+Comeback.
+
+Achievement-Logik darf nicht direkt in GameModes eingebaut werden.
+
+Nutze Domain Events.
+
+# DOMAIN EVENTS
+
+Das System soll Events erzeugen wie:
+
+PlayerJoinedLobby
+
+PlayerLeftLobby
+
+GameStarted
+
+RoundStarted
+
+SubmissionCreated
+
+VoteCreated
+
+RoundFinished
+
+GameFinished
+
+AchievementUnlocked.
+
+Dadurch können später Statistiken, Achievements, Analytics und Notifications angebunden werden, ohne den Game-Loop umzubauen.
+
+# REDIS
+
+Verwende Redis für:
+
+aktive Lobbys
+
+Lobby State
+
+Player Sessions
+
+Socket Mapping
+
+Pub/Sub
+
+Distributed Locks
+
+Rate Limits.
+
+Aktive Spiele sollen nicht bei jedem kleinen Event vollständig nach PostgreSQL geschrieben werden.
+
+Nach Spielende wichtige Resultate persistieren.
+
+# POSTGRESQL
+
+PostgreSQL speichert langfristige Daten:
+
+Accounts
+
+Templates
+
+Meme Packs
+
+Freunde
+
+Achievements
+
+Game History
+
+Reports
+
+Statistics
+
+Lobby Presets.
+
+Erstelle dafür saubere Prisma Models und Migrationen.
+
+# MULTI-INSTANCE SUPPORT
+
+Plane von Anfang an mehrere Backend-Instanzen ein.
+
+Socket.IO Redis Adapter verwenden.
+
+Keine Lobby darf nur aufgrund von In-Memory-State einer bestimmten Backend-Instanz funktionieren.
+
+# PERFORMANCE
+
+Vermeide Polling.
+
+Nutze WebSockets.
+
+Nur Zustandsänderungen übertragen.
+
+Große Assets nicht durch Socket.IO schicken.
+
+Assets über HTTP/CDN ausliefern.
+
+WebSocket Payloads klein halten.
+
+Keine Base64-Bilder in WebSocket Events.
+
+# SECURITY
+
+Alle Eingaben validieren.
+
+Zod verwenden.
+
+Rate Limiting implementieren.
+
+HTML niemals ungefiltert rendern.
+
+XSS verhindern.
+
+CSRF bei HTTP-Endpunkten berücksichtigen.
+
+Upload Security implementieren.
+
+Host-Actions serverseitig autorisieren.
+
+Lobby Codes dürfen keine administrativen Rechte implizieren.
+
+Session Tokens niemals im Klartext in Logs schreiben.
+
+Production Cookies:
+
+HttpOnly
+
+Secure
+
+SameSite.
+
+# MOBILE
+
+Mobile First entwickeln.
+
+Meme Editor auf Touchscreens vollständig bedienbar.
+
+Buttons groß genug.
+
+Kein Hover als einzige Bedienmöglichkeit.
+
+Landscape und Portrait unterstützen.
+
+# PWA
+
+Installierbare Progressive Web App.
+
+Manifest.
+
+Service Worker.
+
+Icons.
+
+Offline-Seite.
+
+Die eigentlichen Multiplayer-Spiele benötigen weiterhin Verbindung.
+
+# UI DESIGN
+
+Erstelle eine moderne, eigenständige visuelle Identität.
+
+Nicht das Design existierender Meme-Spiele kopieren.
+
+Stil:
+
+modern
+
+spielerisch
+
+kräftige Typografie
+
+leichte Animationen
+
+große Karten
+
+klar erkennbare Primäraktionen
+
+Dark Mode als Standard
+
+optionaler Light Mode.
+
+Die Lobby muss auf einen Blick verständlich sein.
+
+# ACCESSIBILITY
+
+Keyboard Navigation.
+
+sichtbare Focus States.
+
+ARIA Labels.
+
+ausreichende Kontraste.
+
+Reduced Motion berücksichtigen.
+
+# INTERNATIONALISIERUNG
+
+Alle UI-Texte über i18n.
+
+Keine deutschen oder englischen Strings direkt in Komponenten schreiben.
+
+Beginne mit:
+
+Deutsch
+
+Englisch.
+
+Die Sprache eines Spielers muss unabhängig von der Sprache anderer Spieler sein.
+
+# ADMIN PANEL
+
+Erstelle ein geschütztes Admin Panel.
+
+Admin kann:
+
+User suchen
+
+User sperren
+
+Reports ansehen
+
+Templates moderieren
+
+Templates deaktivieren
+
+Meme Packs prüfen
+
+öffentliche Lobbys ansehen
+
+Statistiken einsehen
+
+Systemmeldungen erstellen.
+
+Admin-Rechte niemals über normale Clientparameter steuerbar machen.
+
+# OBSERVABILITY
+
+Strukturierte Logs verwenden.
+
+Request ID.
+
+Lobby ID.
+
+Game ID.
+
+Player ID.
+
+Keine sensiblen Tokens loggen.
+
+Health Endpoints implementieren:
+
+/health
+
+/ready.
+
+# TESTS
+
+Schreibe Unit Tests für:
+
+Scoring
+
+Game State Machine
+
+Lobby Permissions
+
+Voting
+
+Reconnect
+
+Host Migration.
+
+Integration Tests für WebSocket Events.
+
+Playwright E2E Tests für folgenden kompletten Ablauf:
+
+Spieler A erstellt Lobby.
+
+Spieler B tritt über Lobby-Code bei.
+
+Beide setzen Ready.
+
+Host startet Spiel.
+
+Beide erhalten Vorlage.
+
+Beide erstellen Meme.
+
+Input Timer endet.
+
+Voting startet.
+
+Beide voten.
+
+Runde wird ausgewertet.
+
+Nächste Runde startet.
+
+Spiel endet.
+
+Rangliste erscheint.
+
+Zusätzlicher E2E Test:
+
+Spieler lädt während der Runde die Seite neu und wird korrekt wieder verbunden.
+
+# DOCKER
+
+Liefere eine vollständige docker-compose.yml.
+
+Development und Production unterscheiden.
+
+Volumes für:
+
+PostgreSQL
+
+Redis optional
+
+Uploads/MinIO.
+
+Erstelle:
+
+.env.example
+
+README.md
+
+Setup-Anleitung
+
+Production Deployment Anleitung.
+
+# PLESK
+
+Dokumentiere zusätzlich, wie die Anwendung hinter einem Plesk Reverse Proxy betrieben werden kann.
+
+Berücksichtige WebSocket Upgrade Header.
+
+Die Anwendung darf keine fest codierte Domain voraussetzen.
+
+# ENTWICKLUNGSSTRATEGIE
+
+Baue das Projekt in funktionsfähigen Meilensteinen.
+
+Nach jedem Meilenstein muss die Anwendung weiterhin startbar sein.
+
+Beginne NICHT damit, hunderte leere Dateien oder Platzhalter zu erzeugen.
+
+Implementiere zuerst einen vollständigen vertikalen Slice.
+
+Der erste funktionsfähige Slice muss folgendes können:
+
+Website öffnen.
+
+Nickname eingeben.
+
+Lobby erstellen.
+
+zweiten Browser öffnen.
+
+Lobby-Code eingeben.
+
+Lobby beitreten.
+
+Spiel starten.
+
+Meme Template erhalten.
+
+Caption eingeben.
+
+Caption absenden.
+
+Memes anzeigen.
+
+voten.
+
+Punkte anzeigen.
+
+nächste Runde.
+
+Endergebnis.
+
+Erst nachdem dieser Ablauf zuverlässig funktioniert, folgen Accounts, Template Studio, Achievements und erweiterte Modi.
+
+# QUALITÄTSREGELN
+
+Keine TODO-Platzhalter für Kernfunktionen.
+
+Kein Mock Backend für die finale Implementierung.
+
+Keine clientseitigen Fake-Timer.
+
+Keine clientseitige Score-Berechnung.
+
+Keine doppelten Type-Definitionen.
+
+Keine untypisierten Socket Events.
+
+Kein `any`, wenn ein sinnvoller Type möglich ist.
+
+Keine gigantischen Dateien.
+
+Keine Business-Logik in React-Komponenten.
+
+Keine Business-Logik in Socket-Handlern.
+
+Socket-Handler sollen lediglich validieren, autorisieren und Domain Services aufrufen.
+
+# DOKUMENTATION
+
+Erstelle eine ARCHITECTURE.md.
+
+Sie muss erklären:
+
+Systemarchitektur
+
+Game Engine
+
+State Machine
+
+Realtime Kommunikation
+
+Redis
+
+Database
+
+Reconnect-System
+
+Scaling
+
+Asset Storage
+
+Security.
+
+Erstelle zusätzlich EVENT_PROTOCOL.md.
+
+Dokumentiere jedes WebSocket Event mit:
+
+Richtung
+
+Payload
+
+Antwort
+
+Berechtigung
+
+mögliche Fehler.
+
+# ERGEBNIS
+
+Das Projekt soll kein einfacher Demo-Klon sein.
+
+Es soll eine langfristig wartbare Multiplayer-Plattform entstehen, auf der später viele kreative Partyspiele laufen können.
+
+Prioritäten:
+
+1. zuverlässiger Multiplayer
+2. saubere server-authoritative Game Engine
+3. Reconnect
+4. gute mobile Bedienung
+5. modulare GameModes
+6. schnelle Ladezeiten
+7. einfache Erweiterbarkeit
+8. sichere Uploads
+9. gute Moderation
+10. horizontale Skalierbarkeit.
+
+Wenn eine Architekturentscheidung zwischen schneller kurzfristiger Umsetzung und langfristig sauberer Modularität getroffen werden muss, bevorzuge die saubere Modularität, solange dadurch der erste spielbare Vertical Slice nicht unnötig kompliziert wird.
+
+Arbeite selbstständig weiter, solange keine Entscheidung erforderlich ist, die das grundlegende Produktziel verändert.
+
+Bei kleineren technischen Entscheidungen wähle selbst eine sinnvolle Lösung und dokumentiere sie, statt die Entwicklung zu unterbrechen.

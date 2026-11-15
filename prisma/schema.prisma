@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model DomainEvent {
+  id        String   @id
+  type      String
+  gameId    String
+  lobbyCode String
+  payload   String
+  createdAt DateTime @default(now())
+
+  @@index([gameId, createdAt])
+  @@index([type, createdAt])
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String?   @unique
+  passwordHash    String?
+  emailVerifiedAt DateTime?
+  nickname        String
+  avatarPath      String?
+  role            String    @default("USER")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  templates       Template[]
+  packs           TemplatePack[]
+  presets         LobbyPreset[]
+  reports         Report[] @relation("ReportsMade")
+  reportsAgainst  Report[] @relation("ReportsAgainst")
+  statistics      PlayerStatistic?
+  achievements    UserAchievement[]
+  muteRelations   UserMute[] @relation("MutesMade")
+  mutedBy         UserMute[] @relation("MutedBy")
+  sentFriends     Friendship[] @relation("FriendRequestSender")
+  receivedFriends Friendship[] @relation("FriendRequestRecipient")
+}
+
+model Template {
+  id            String   @id @default(uuid())
+  ownerId       String?
+  name          String
+  description   String?
+  mediaType     String
+  storagePath   String
+  thumbnailPath String?
+  width         Int
+  height        Int
+  tags          String[] @default([])
+  language      String   @default("de")
+  rating        String   @default("family")
+  nsfw          Boolean  @default(false)
+  active        Boolean  @default(true)
+  provider      String   @default("upload")
+  sourceUrl     String?
+  moderationStatus String @default("APPROVED")
+  reportCount   Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  owner         User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  packItems     TemplatePackItem[]
+  reports       TemplateReport[]
+
+  @@index([ownerId, active])
+  @@index([active, language])
+  @@index([moderationStatus, active])
+  @@index([provider, active])
+}
+
+model TemplateReport {
+  id          String   @id @default(uuid())
+  templateId  String
+  reporterKey String
+  reason      String
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+  reviewedAt  DateTime?
+  template    Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, reporterKey])
+  @@index([status, createdAt])
+}
+
+model TemplatePack {
+  id          String   @id @default(uuid())
+  ownerId     String?
+  name        String
+  description String?
+  coverPath   String?
+  isPublic    Boolean  @default(false)
+  tags        String[] @default([])
+  language    String   @default("de")
+  ageRating   String   @default("family")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  items       TemplatePackItem[]
+
+  @@index([isPublic, language])
+}
+
+model TemplatePackItem {
+  packId     String
+  templateId String
+  position   Int          @default(0)
+  pack       TemplatePack @relation(fields: [packId], references: [id], onDelete: Cascade)
+  template   Template     @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@id([packId, templateId])
+  @@index([templateId])
+}
+
+model LobbyPreset {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
+model Friendship {
+  requesterId String
+  recipientId String
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  requester   User     @relation("FriendRequestSender", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipient   User     @relation("FriendRequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@id([requesterId, recipientId])
+  @@index([recipientId, status])
+}
+
+model Report {
+  id             String   @id @default(uuid())
+  reporterId     String
+  reportedUserId String?
+  lobbyCode      String?
+  reason         String
+  status         String   @default("OPEN")
+  createdAt      DateTime @default(now())
+  reviewedAt     DateTime?
+  reporter       User     @relation("ReportsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser   User?    @relation("ReportsAgainst", fields: [reportedUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([reportedUserId, createdAt])
+}
+
+model UserMute {
+  userId    String
+  mutedId   String
+  createdAt DateTime @default(now())
+  user      User     @relation("MutesMade", fields: [userId], references: [id], onDelete: Cascade)
+  muted     User     @relation("MutedBy", fields: [mutedId], references: [id], onDelete: Cascade)
+
+  @@id([userId, mutedId])
+}
+
+model GameHistory {
+  id         String       @id
+  lobbyCode  String
+  mode       String
+  config     Json
+  finishedAt DateTime     @default(now())
+  results    GameResult[]
+
+  @@index([mode, finishedAt])
+}
+
+model GameResult {
+  id        String      @id @default(uuid())
+  gameId    String
+  playerId  String
+  nickname  String
+  score     Int
+  placement Int
+  game      GameHistory @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, playerId])
+  @@index([playerId, placement])
+}
+
+model PlayerStatistic {
+  userId            String   @id
+  gamesPlayed       Int      @default(0)
+  wins              Int      @default(0)
+  roundsPlayed      Int      @default(0)
+  memesCreated      Int      @default(0)
+  likesReceived     Int      @default(0)
+  dislikesReceived  Int      @default(0)
+  totalScore        Int      @default(0)
+  highestRoundScore Int      @default(0)
+  buddyHits         Int      @default(0)
+  buddyAttempts     Int      @default(0)
+  favoriteMode      String?
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String
+  createdAt   DateTime @default(now())
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+}

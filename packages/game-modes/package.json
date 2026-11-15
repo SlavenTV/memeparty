@@ -1,0 +1,6 @@
+{
+  "name": "@memeparty/game-modes",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts"
+}
